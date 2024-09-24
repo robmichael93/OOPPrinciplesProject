@@ -4,6 +4,8 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using Unity.VisualScripting;
+using System.Runtime.InteropServices.WindowsRuntime;
 
 public class GameManager : MonoBehaviour
 {
@@ -13,8 +15,8 @@ public class GameManager : MonoBehaviour
     public GameObject titleScreen;
     public Button restartButton; 
 
-    public List<GameObject> targetPrefabs;
-
+    public List<GameObject> foodPrefabs;
+    public GameObject boxPrefab;
     private int matchesMade;
     private float time;
     public bool isGameActive;
@@ -22,15 +24,123 @@ public class GameManager : MonoBehaviour
     private float spaceBetweenSquares = 2.5f; 
     private float minValueX = -3.75f; //  x value of the center of the left-most square
     private float minValueY = -3.75f; //  y value of the center of the bottom-most square
+    [SerializeField] private int numberOfFoodPairs;
+    [SerializeField] private int numberOfRows;
+    [SerializeField] private int numberOfColumns;
+    [SerializeField] private int cookiePairs;
+    [SerializeField] private int pizzaPairs;
+    [SerializeField] private int sandwichPairs;
+    [SerializeField] private int steakPairs;
+    [SerializeField] private int maxPairsPerType; 
+    public enum occupancy
+    {
+        Empty,
+        Occupied
+    };
+    public struct squareState
+    {
+        public squareState(int row, int column)
+        {
+            m_rowIndex = row;
+            m_columnIndex = column;
+            m_foodType = "Cookie";
+            m_occupiedState = occupancy.Empty;
+        }
+
+        private int m_rowIndex;
+        public int rowIndex
+        {
+            get {return m_rowIndex;}
+            set
+            {
+                if (value < 0 || value > 3)
+                {
+                    Debug.LogError("Row index must be between 0 and 3.");
+                }
+                else
+                {
+                    {
+                        m_rowIndex = value;
+                    }
+                }
+            }
+        }
+        private int m_columnIndex;
+        public int columnIndex
+        {
+            get {return m_columnIndex;}
+            set
+            {
+                if (value < 0 || value > 3)
+                {
+                    Debug.LogError("Column index must be between 0 and 3.");
+                }
+                else
+                {
+                    {
+                        m_columnIndex = value;
+                    }
+                }
+            }
+        }
+        
+        private occupancy m_occupiedState;
+        public occupancy occupiedState
+        {
+            get {return m_occupiedState;}
+            set
+            {
+                if (value == occupancy.Empty || value == occupancy.Occupied)
+                {
+                    m_occupiedState = value;
+                }
+                else
+                {
+                    Debug.LogError("Occupancy state must be occupancy.Empty or occupancy.Occupied");
+                }
+            }
+
+        }
+
+        private string m_foodType;
+        public string foodType
+        {
+            get {return m_foodType;}
+            set
+            {
+                if (value.Equals("Cookie") || value.Equals("Pizza") || value.Equals("Sandwich") || value.Equals("Steak"))
+                {
+                    m_foodType = value;
+                }
+                else
+                {
+                    Debug.LogError("Food type not valid.  Type passed in was: " + value);
+                }
+            }
+        }
+    }
+    [SerializeField] private squareState[,] boardSquares;
+
+    public squareState[,] GetBoard()
+    {
+        return boardSquares;
+    }
     
     // Start the game, remove title screen, reset score, and adjust spawnRate based on difficulty button clicked
-    public void StartGame(int difficulty)
+    public void StartGame()
     {
         isGameActive = true;
         matchesMade = 0;
         time = 0;
+        cookiePairs = pizzaPairs = sandwichPairs = steakPairs = 0;
+        maxPairsPerType = 2;
         UpdateTime(time);
         titleScreen.SetActive(false);
+        numberOfRows = 4;
+        numberOfColumns = 4;
+        numberOfFoodPairs = (numberOfRows * numberOfColumns) / 2;
+        boardSquares = CreateSquareStates(numberOfRows, numberOfColumns);
+        FillBoardWithFoodPairs(numberOfFoodPairs);
         SpawnBoxes();
     }
 
@@ -42,32 +152,159 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // While game is active spawn a random target
-    void SpawnBoxes()
+    private squareState[,] CreateSquareStates(int numRows, int numCols)
     {
-        int index = Random.Range(0, targetPrefabs.Count);
-
-        if (isGameActive)
+        squareState[,] board = new squareState[numRows, numCols];
+        for (int i = 0; i < numRows; i++)
         {
-            Instantiate(targetPrefabs[index], RandomSpawnPosition(), targetPrefabs[index].transform.rotation);
+            for (int j = 0; j < numCols; j++)
+            {
+                board[i,j] = new squareState(i, j);
+            }
+        }
+        return board;
+    }
+
+    private void FillBoardWithFoodPairs(int numberOfPairs)
+    {
+        int numberOfPairsToMake = numberOfPairs;
+        // Debug.Log("Number of pairs to make: " + numberOfPairsToMake);
+        for (int row = 0; row < numberOfRows && numberOfPairsToMake > 0; row++)
+        {
+            for (int column = 0; column < numberOfColumns && numberOfPairsToMake > 0; column++)
+            {
+                if (boardSquares[row, column].occupiedState == occupancy.Empty)
+                {
+                    // Debug.Log("Board space [" + row + ", " + column + "] is empty.");
+                    // Find the first unoccupied square & put a food in it, marking it as occupied
+                    bool availableFoodPair = false;
+                    int foodTypeIndex = -1;
+                    while (!availableFoodPair)
+                    {
+                        int potentialFoodTypeIndex = Random.Range(0, foodPrefabs.Count);
+                        if (GetFoodPairCount(potentialFoodTypeIndex) < maxPairsPerType)
+                        {
+                            boardSquares[row, column].foodType = GetFoodDescriptionFromIndex(potentialFoodTypeIndex);
+                            boardSquares[row, column].occupiedState = occupancy.Occupied;
+                            IncrementFoodPairCount(potentialFoodTypeIndex);
+                            foodTypeIndex = potentialFoodTypeIndex;
+                            availableFoodPair = true;
+                        }
+                    }
+                    // Debug.Log("Food: " + boardSquares[row, column].foodType + " placed at [" + row + ", " + column + "]");
+
+                    // Find a random unoccupied square & put the same food in it, marking it as occupied
+                    bool unoccupiedPairSquareFound = false;
+                    while (!unoccupiedPairSquareFound)
+                    {
+                        int i = Random.Range(0, numberOfRows);
+                        int j = Random.Range(0, numberOfColumns);
+                        if (boardSquares[i, j].occupiedState == occupancy.Empty)
+                        {
+                            // Debug.Log("Board space [" + i + ", " + j + "] is empty.");
+                            boardSquares[i, j].foodType = GetFoodDescriptionFromIndex(foodTypeIndex);
+                            boardSquares[i, j].occupiedState = occupancy.Occupied;
+                            unoccupiedPairSquareFound = true;
+                            numberOfPairsToMake--;
+                            // Debug.Log("Food: " + boardSquares[i, j].foodType + " pair placed at [" + i + ", " + j + "]");
+                            // Debug.Log("Number of pairs to make: " + numberOfPairsToMake);
+                        }
+                        // else
+                        // {
+                        //     Debug.Log("Board space [" + i + ", " + j + "] is NOT empty.");
+                        // }
+                    };
+                }
+                // else
+                // {
+                //     Debug.Log("Board space [" + row + ", " + column + "] is NOT empty.");
+                // }
+            }
+        }
+        // Debug.Log("Finished filling squares with food.");
+    }
+
+    private int GetFoodPairCount(int index)
+    {
+        switch(index)
+        {
+            case 0:
+                return cookiePairs;
+            case 1:
+                return pizzaPairs;
+            case 2:
+                return sandwichPairs;
+            case 3:
+                return steakPairs;
+        }
+        return -1;
+    }
+
+    private void IncrementFoodPairCount(int index)
+    {
+        switch(index)
+        {
+            case 0:
+                cookiePairs++;
+                break;
+            case 1:
+                pizzaPairs++;
+                break;
+            case 2:
+                sandwichPairs++;
+                break;
+            case 3:
+                steakPairs++;
+                break;
         }
     }
 
-    // Generate a random spawn position based on a random index from 0 to 3
-    Vector3 RandomSpawnPosition()
+    private string GetFoodDescriptionFromIndex(int index)
     {
-        float spawnPosX = minValueX + (RandomSquareIndex() * spaceBetweenSquares);
-        float spawnPosY = minValueY + (RandomSquareIndex() * spaceBetweenSquares);
+        string newFoodType = "";
+        switch (index)
+        {
+        case 0:
+            newFoodType = "Cookie";
+            break;
+        case 1:
+            newFoodType = "Pizza";
+            break;
+        case 2:
+            newFoodType = "Sandwich";
+            break;
+        case 3:
+            newFoodType = "Steak";
+            break;
+        default:
+            Debug.LogError("Food type is missing.");
+            break;
+        }
+        return newFoodType;
+    }
+
+    void SpawnBoxes()
+    {
+        for (int i = 0; i < numberOfRows; i++)
+        {
+            for (int j = 0; j < numberOfColumns; j++)
+            {
+                Crate newCrate = (Instantiate(boxPrefab, SpawnPosition(i, j), boxPrefab.transform.rotation)).GetComponent<Crate>();
+                newCrate.row = i;
+                newCrate.column = j;
+                // Debug.Log("Crate created at: [" + newCrate.row + ", " + newCrate.column + "]");
+            }
+        }
+    }
+
+    // Generate a spawn position based on the row and column indices
+    Vector3 SpawnPosition(int row, int column)
+    {
+        float spawnPosX = minValueX + (row * spaceBetweenSquares);
+        float spawnPosY = minValueY + (column * spaceBetweenSquares);
 
         Vector3 spawnPosition = new Vector3(spawnPosX, spawnPosY, 0);
         return spawnPosition;
-
-    }
-
-    // Generates random square index from 0 to 3, which determines which square the target will appear in
-    int RandomSquareIndex()
-    {
-        return Random.Range(0, 4);
     }
 
     // Update score with value from target clicked

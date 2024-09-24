@@ -11,6 +11,8 @@ GameObject:
   - component: {fileID: 2705755991728508053}
   - component: {fileID: 9084790460689977765}
   - component: {fileID: 3400793585035231912}
+  - component: {fileID: -2947379746419895493}
+  - component: {fileID: 6539567717839540335}
   m_Layer: 0
   m_Name: QuestionCrate
   m_TagString: Untagged
@@ -83,3 +85,39 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &-2947379746419895493
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5522998010469412818}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ff2ca4442030094cb2ea08cf291f9f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gameManager: {fileID: 0}
+  row: 0
+  column: 0
+--- !u!65 &6539567717839540335
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5522998010469412818}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.9964991, y: 0.9964953, z: 0.99649566}
+  m_Center: {x: 0.00000019371508, y: 0, z: -0.00000001490116}
