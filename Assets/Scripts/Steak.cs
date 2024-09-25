@@ -15,12 +15,12 @@ public class Steak : Food
     {
         
     }
-    protected override void Reveal()
+    public override void Reveal()
     {
         
     }
 
-    protected override void PlaySound()
+    public override void PlaySound()
     {
         
     }

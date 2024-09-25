@@ -4,7 +4,7 @@ using UnityEngine;
 
 public abstract class Food : MonoBehaviour
 {
-    protected abstract void Reveal();
-    protected abstract void PlaySound();
-    
+    public abstract void Reveal();
+    public abstract void PlaySound();
+
 }

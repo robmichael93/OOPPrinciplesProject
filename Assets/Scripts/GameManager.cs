@@ -9,6 +9,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 
 public class GameManager : MonoBehaviour
 {
+    public TextMeshProUGUI attemptsText;
     public TextMeshProUGUI matchesText;
     public TextMeshProUGUI timerText;
     public TextMeshProUGUI gameOverText;
@@ -31,7 +32,16 @@ public class GameManager : MonoBehaviour
     [SerializeField] private int pizzaPairs;
     [SerializeField] private int sandwichPairs;
     [SerializeField] private int steakPairs;
-    [SerializeField] private int maxPairsPerType; 
+    [SerializeField] private int maxPairsPerType;
+    [SerializeField] private Crate firstPickedCrate;
+    [SerializeField] private GameObject firstFood;
+    [SerializeField] private bool firstPairPicked;
+    [SerializeField] private string firstPairFoodType;
+    [SerializeField] private Crate secondPickedCrate;
+    [SerializeField] private GameObject secondFood;
+    [SerializeField] private bool secondPairPicked;
+    [SerializeField] private string secondPairFoodType;
+    [SerializeField] private int numberOfAttemptedMatches;
     public enum occupancy
     {
         Empty,
@@ -131,6 +141,7 @@ public class GameManager : MonoBehaviour
     {
         isGameActive = true;
         matchesMade = 0;
+        numberOfAttemptedMatches = 0;
         time = 0;
         cookiePairs = pizzaPairs = sandwichPairs = steakPairs = 0;
         maxPairsPerType = 2;
@@ -141,7 +152,7 @@ public class GameManager : MonoBehaviour
         numberOfFoodPairs = (numberOfRows * numberOfColumns) / 2;
         boardSquares = CreateSquareStates(numberOfRows, numberOfColumns);
         FillBoardWithFoodPairs(numberOfFoodPairs);
-        SpawnBoxes();
+        SpawnCrates();
     }
 
     private void Update()
@@ -175,7 +186,6 @@ public class GameManager : MonoBehaviour
             {
                 if (boardSquares[row, column].occupiedState == occupancy.Empty)
                 {
-                    // Debug.Log("Board space [" + row + ", " + column + "] is empty.");
                     // Find the first unoccupied square & put a food in it, marking it as occupied
                     bool availableFoodPair = false;
                     int foodTypeIndex = -1;
@@ -191,7 +201,6 @@ public class GameManager : MonoBehaviour
                             availableFoodPair = true;
                         }
                     }
-                    // Debug.Log("Food: " + boardSquares[row, column].foodType + " placed at [" + row + ", " + column + "]");
 
                     // Find a random unoccupied square & put the same food in it, marking it as occupied
                     bool unoccupiedPairSquareFound = false;
@@ -201,27 +210,15 @@ public class GameManager : MonoBehaviour
                         int j = Random.Range(0, numberOfColumns);
                         if (boardSquares[i, j].occupiedState == occupancy.Empty)
                         {
-                            // Debug.Log("Board space [" + i + ", " + j + "] is empty.");
                             boardSquares[i, j].foodType = GetFoodDescriptionFromIndex(foodTypeIndex);
                             boardSquares[i, j].occupiedState = occupancy.Occupied;
                             unoccupiedPairSquareFound = true;
                             numberOfPairsToMake--;
-                            // Debug.Log("Food: " + boardSquares[i, j].foodType + " pair placed at [" + i + ", " + j + "]");
-                            // Debug.Log("Number of pairs to make: " + numberOfPairsToMake);
                         }
-                        // else
-                        // {
-                        //     Debug.Log("Board space [" + i + ", " + j + "] is NOT empty.");
-                        // }
                     };
                 }
-                // else
-                // {
-                //     Debug.Log("Board space [" + row + ", " + column + "] is NOT empty.");
-                // }
             }
         }
-        // Debug.Log("Finished filling squares with food.");
     }
 
     private int GetFoodPairCount(int index)
@@ -277,13 +274,13 @@ public class GameManager : MonoBehaviour
             newFoodType = "Steak";
             break;
         default:
-            Debug.LogError("Food type is missing.");
+            Debug.LogError("Food index must be between 0 and 3; no food selected.");
             break;
         }
         return newFoodType;
     }
 
-    void SpawnBoxes()
+    void SpawnCrates()
     {
         for (int i = 0; i < numberOfRows; i++)
         {
@@ -292,7 +289,6 @@ public class GameManager : MonoBehaviour
                 Crate newCrate = (Instantiate(boxPrefab, SpawnPosition(i, j), boxPrefab.transform.rotation)).GetComponent<Crate>();
                 newCrate.row = i;
                 newCrate.column = j;
-                // Debug.Log("Crate created at: [" + newCrate.row + ", " + newCrate.column + "]");
             }
         }
     }
@@ -307,11 +303,117 @@ public class GameManager : MonoBehaviour
         return spawnPosition;
     }
 
-    // Update score with value from target clicked
+    public void SelectSquare(Crate crate)
+    {
+        if (!firstPairPicked)
+        {
+            squareState firstPickedSquare = boardSquares[crate.row, crate.column];
+            firstPairFoodType = firstPickedSquare.foodType;
+            firstPickedCrate = crate;
+            firstPickedCrate.gameObject.SetActive(false);
+            firstFood = SpawnFoodObject(crate, firstPairFoodType);
+            Food firstFoodScript = firstFood.GetComponent<Food>();
+            firstFoodScript.Reveal();
+            firstFoodScript.PlaySound();
+            firstPairPicked = true;
+        }
+        else if (firstPairPicked && !secondPairPicked)
+        {
+            squareState secondPickedSquare = boardSquares[crate.row, crate.column];
+            secondPairFoodType = secondPickedSquare.foodType;
+            secondPickedCrate = crate;
+            secondPickedCrate.gameObject.SetActive(false);
+            secondFood = SpawnFoodObject(crate, secondPairFoodType);
+            Food secondFoodScript = secondFood.GetComponent<Food>();
+            secondFoodScript.Reveal();
+            secondFoodScript.PlaySound();
+            secondPairPicked = true;
+            numberOfAttemptedMatches++;
+            if (firstPairPicked && secondPairPicked)
+            {
+                if (firstPairFoodType == secondPairFoodType)
+                {
+                    StartCoroutine(RemoveObjectsAndUpdateMatches());
+                }
+                else
+                {
+                    StartCoroutine(ResetCrates());
+                }
+            }
+        }
+    }
+
+    IEnumerator RemoveObjectsAndUpdateMatches()
+    {
+        yield return new WaitForSeconds(2);
+        Destroy(firstPickedCrate.gameObject);
+        Destroy(secondPickedCrate.gameObject);
+        Destroy(firstFood.gameObject);
+        Destroy(secondFood.gameObject);
+        UpdateMatches();
+        UpdateAttempts();
+        ResetPickingVariables();
+    }
+    IEnumerator ResetCrates()
+    {
+        yield return new WaitForSeconds(2);
+        firstPickedCrate.gameObject.SetActive(true);
+        secondPickedCrate.gameObject.SetActive(true);
+        Destroy(firstFood.gameObject);
+        Destroy(secondFood.gameObject);
+        UpdateAttempts();
+        ResetPickingVariables();
+    }
+
+    private void ResetPickingVariables()
+    {
+        firstPairPicked = false;
+        secondPairPicked = false;
+        firstPickedCrate = null;
+        secondPickedCrate = null;
+        firstFood = null;
+        firstPairFoodType = "";
+        secondFood = null;
+        secondPairFoodType = "";
+    }
+
+    private GameObject SpawnFoodObject(Crate crate, string foodType)
+    {
+        int prefabIndex = 0;
+        switch(foodType)
+        {
+            case "Cookie":
+                prefabIndex = 0;
+                break;
+            case "Pizza":
+                prefabIndex = 1;
+                break;
+            case "Sandwich":
+                prefabIndex = 2;
+                break;
+            case "Steak":
+                prefabIndex = 3;
+                break;
+            default:
+                break;            
+        }
+        return Instantiate(foodPrefabs[prefabIndex], crate.gameObject.transform.position, foodPrefabs[prefabIndex].gameObject.transform.rotation);
+    }
+
+    void UpdateAttempts()
+    {
+        attemptsText.text = "Attempts: " + numberOfAttemptedMatches;
+    }
+
+    // Update number of matches made when second crate is selected and if it is a match to the first crate
     public void UpdateMatches()
     {
         matchesMade++;
         matchesText.text = "Matches: " + matchesMade;
+        if(matchesMade == numberOfFoodPairs)
+        {
+            GameOver();
+        }
     }
 
     void UpdateTime(float currentTime)
