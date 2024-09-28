@@ -4,8 +4,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Scripting.APIUpdating;
 
+// INHERITENCE: child class of Food that uses inherited member variables and overridden functions
 public class Cookie : Food
 {
+    // POLYMORPHISM: overriden virtual function
     public override void Awake()
     {
         base.Awake();
@@ -84,11 +86,13 @@ public class Cookie : Food
         return angleInDegrees;
     }
 
+    // POLYMORPHISM: overriden abstract function
     public override void Reveal()
     {
         isLifting = true;
     }
 
+    // POLYMORPHISM: overriden virtual function
     public override void PlaySound()
     {
         foodSoundSource.pitch = 0.5f;

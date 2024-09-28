@@ -3,8 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// INHERITENCE: child class of Food that uses protected member variables and overridden functions
 public class Sandwich : Food
 {
+    // POLYMORPHISM: overriden virtual function
     public override void Awake()
     {
         base.Awake();
@@ -119,16 +121,18 @@ public class Sandwich : Food
         return angleInDegrees;
     }
 
+    // POLYMORPHISM: overriden abstract function
     public override void Reveal()
     {
         isLifting = true;
         rotateToPointQuat = Quaternion.AngleAxis(-45, transform.InverseTransformDirection(transform.up));      
     }
 
+    // POLYMORPHISM: overriden virtual function
     public override void PlaySound()
     {
         foodSoundSource.pitch = 0.5f;
-        foodSoundSource.volume = 0.75f;
+        foodSoundSource.volume = 2;
         base.PlaySound();
     }
 }

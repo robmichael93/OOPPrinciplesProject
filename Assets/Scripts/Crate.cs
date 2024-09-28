@@ -13,6 +13,8 @@ public class Crate : MonoBehaviour
         gameManager = GameObject.Find("Game Manager").GetComponent<GameManager>();
     }
 
+    // ABSTRACTION: calls the processing function in the MainManager when the crate is
+    // clicked on
     private void OnMouseDown()
     {
         if (gameManager.isGameActive)

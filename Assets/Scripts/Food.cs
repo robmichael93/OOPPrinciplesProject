@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// INHERITENCE: base class for the different types of foods
 public abstract class Food : MonoBehaviour
 {
     [SerializeField] protected Vector3 startingPosition;
@@ -27,6 +28,9 @@ public abstract class Food : MonoBehaviour
     [SerializeField] public AudioSource foodSoundSource;
     [SerializeField] public AudioClip foodSound;
 
+    // POLYMORPHISM: abstract function to be implemented in child classes and
+    // virtual functions that can be overwritten in the child classes and/or call
+    // the parent class functionality
     public virtual void Awake()
     {
         foodSoundSource = GetComponent<AudioSource>();
@@ -37,4 +41,8 @@ public abstract class Food : MonoBehaviour
         foodSoundSource.PlayOneShot(foodSound, 1);
     }
 
+    public virtual void PlaySound(AudioClip sound, float volume = 1.0f)
+    {
+        foodSoundSource.PlayOneShot(sound, volume);
+    }
 }

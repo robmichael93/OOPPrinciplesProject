@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// INHERITENCE: child class of Food that uses protected member variables and overridden functions
 public class Steak : Food
 {
     [SerializeField] private int numberOfMoves;
@@ -11,6 +12,8 @@ public class Steak : Food
     [SerializeField] private Vector3 startingScale;
     [SerializeField] private float scalar;
     [SerializeField] private Vector3 endingScale;
+
+    // POLYMORPHISM: overriden virtual function
     public override void Awake()
     {
         base.Awake();
@@ -59,7 +62,7 @@ public class Steak : Food
                 transform.localScale = startingScale;
                 isFalling = false;
                 currentMoves++;
-                PlaySlamSound();
+                PlaySound(foodSound); // POLYMORPHISM: using overloaded PlaySound function
                 if (currentMoves < numberOfMoves)
                 {
                     isLifting = true;
@@ -67,18 +70,16 @@ public class Steak : Food
             }
         }        
     }
+
+    // POLYMORPHISM: overriden abstract function
     public override void Reveal()
     {
         isLifting = true;
     }
 
+    // POLYMORPHISM: overriden virtual function
     public override void PlaySound()
     {
         foodSoundSource.pitch = 0.75f;
-    }
-
-    private void PlaySlamSound()
-    {
-        base.PlaySound();
     }
 }
