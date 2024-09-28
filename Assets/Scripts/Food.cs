@@ -11,7 +11,6 @@ public abstract class Food : MonoBehaviour
     [SerializeField] protected Quaternion startingQuat;
     [SerializeField] protected Quaternion rotateToPointQuat;
     [SerializeField] protected float moveDistance;
-    [SerializeField] protected float MoveSpeed;
     [SerializeField] protected float rotationSpeed;
     [SerializeField] protected float rotateToPointSpeed;
     [SerializeField] protected float moveSpeed;

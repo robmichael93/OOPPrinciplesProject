@@ -9,22 +9,25 @@ using System.Runtime.InteropServices.WindowsRuntime;
 
 public class GameManager : MonoBehaviour
 {
-    public TextMeshProUGUI attemptsText;
-    public TextMeshProUGUI matchesText;
-    public TextMeshProUGUI timerText;
-    public TextMeshProUGUI gameOverText;
-    public GameObject titleScreen;
-    public Button restartButton; 
-
-    public List<GameObject> foodPrefabs;
-    public GameObject boxPrefab;
-    private int matchesMade;
-    private float time;
-    public bool isGameActive;
-
-    private float spaceBetweenSquares = 2.5f; 
-    private float minValueX = -3.75f; //  x value of the center of the left-most square
-    private float minValueY = -3.75f; //  y value of the center of the bottom-most square
+    [SerializeField] private MainGameManager mainGameManager;
+    [SerializeField] private GameObject gameOverScreen;
+    [SerializeField] private TextMeshProUGUI playerName;
+    [SerializeField] public TextMeshProUGUI attemptsText;
+    [SerializeField] public TextMeshProUGUI matchesText;
+    [SerializeField] public TextMeshProUGUI timerText;
+    [SerializeField] public TextMeshProUGUI fastestTimeText;
+    [SerializeField] public TextMeshProUGUI leastMovesText;
+    [SerializeField] public List<GameObject> foodPrefabs;
+    [SerializeField] public GameObject boxPrefab;
+    [SerializeField] private Crate firstPickedCrate;
+    [SerializeField] private GameObject firstFood;
+    [SerializeField] private Crate secondPickedCrate;
+    [SerializeField] private GameObject secondFood;
+    [SerializeField] private float time;
+    [SerializeField] private float spaceBetweenSquares = 2.5f; 
+    [SerializeField] private float minValueX = -3.75f; //  x value of the center of the left-most square
+    [SerializeField] private float minValueY = -3.75f; //  y value of the center of the bottom-most square
+    [SerializeField] private int matchesMade;
     [SerializeField] private int numberOfFoodPairs;
     [SerializeField] private int numberOfRows;
     [SerializeField] private int numberOfColumns;
@@ -33,15 +36,12 @@ public class GameManager : MonoBehaviour
     [SerializeField] private int sandwichPairs;
     [SerializeField] private int steakPairs;
     [SerializeField] private int maxPairsPerType;
-    [SerializeField] private Crate firstPickedCrate;
-    [SerializeField] private GameObject firstFood;
-    [SerializeField] private bool firstPairPicked;
-    [SerializeField] private string firstPairFoodType;
-    [SerializeField] private Crate secondPickedCrate;
-    [SerializeField] private GameObject secondFood;
-    [SerializeField] private bool secondPairPicked;
-    [SerializeField] private string secondPairFoodType;
+    [SerializeField] public bool isGameActive;
     [SerializeField] private int numberOfAttemptedMatches;
+    [SerializeField] private bool firstPairPicked;
+    [SerializeField] private bool secondPairPicked;
+    [SerializeField] private string firstPairFoodType;
+    [SerializeField] private string secondPairFoodType;
     public enum occupancy
     {
         Empty,
@@ -136,20 +136,30 @@ public class GameManager : MonoBehaviour
         return boardSquares;
     }
     
-    // Start the game, remove title screen, reset score, and adjust spawnRate based on difficulty button clicked
-    public void StartGame()
+    public void Start()
     {
+        mainGameManager = MainGameManager.Instance;
         isGameActive = true;
         matchesMade = 0;
         numberOfAttemptedMatches = 0;
         time = 0;
         cookiePairs = pizzaPairs = sandwichPairs = steakPairs = 0;
         maxPairsPerType = 2;
-        UpdateTime(time);
-        titleScreen.SetActive(false);
         numberOfRows = 4;
         numberOfColumns = 4;
         numberOfFoodPairs = (numberOfRows * numberOfColumns) / 2;
+        playerName.text = mainGameManager.playerName;
+        fastestTimeText.text = "Fastest Time: " + mainGameManager.fastestTime;
+        if (mainGameManager.fastestPlayerName != "")
+        {
+            fastestTimeText.text += " (" + mainGameManager.fastestPlayerName + ")";
+        }
+        leastMovesText.text = "Least Moves: " + mainGameManager.leastMoves;
+        if (mainGameManager.leastMovesPlayerName != "")
+        {
+            leastMovesText.text += " (" + mainGameManager.leastMovesPlayerName + ")";
+        }
+        UpdateTime(time);
         boardSquares = CreateSquareStates(numberOfRows, numberOfColumns);
         FillBoardWithFoodPairs(numberOfFoodPairs);
         SpawnCrates();
@@ -424,9 +434,21 @@ public class GameManager : MonoBehaviour
     // Stop game, bring up game over text and restart button
     public void GameOver()
     {
-        gameOverText.gameObject.SetActive(true);
-        restartButton.gameObject.SetActive(true);
+        if ((Mathf.FloorToInt(time) < mainGameManager.fastestTime) || mainGameManager.fastestPlayerName == "")
+        {
+            mainGameManager.fastestTime = Mathf.FloorToInt(time);
+            mainGameManager.fastestPlayerName = mainGameManager.playerName;
+            fastestTimeText.text = "Fastest Time: " + mainGameManager.fastestTime + " (" + mainGameManager.fastestPlayerName + ")";
+        }
+        if ((numberOfAttemptedMatches < mainGameManager.leastMoves) || mainGameManager.leastMovesPlayerName == "")
+        {
+            mainGameManager.leastMoves = numberOfAttemptedMatches;
+            mainGameManager.leastMovesPlayerName = mainGameManager.playerName;
+            leastMovesText.text = "Least Moves: " + mainGameManager.leastMoves + " (" + mainGameManager.leastMovesPlayerName + ")";
+        }
+        mainGameManager.SaveStats();
         isGameActive = false;
+        gameOverScreen.gameObject.SetActive(true);
     }
 
     void CountupTimer()
@@ -441,4 +463,8 @@ public class GameManager : MonoBehaviour
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
+    public void ReturnToMenu()
+    {
+        SceneManager.LoadScene(0);
+    }
 }
