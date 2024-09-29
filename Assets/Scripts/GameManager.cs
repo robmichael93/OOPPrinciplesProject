@@ -18,6 +18,9 @@ public class GameManager : MonoBehaviour
     [SerializeField] public TextMeshProUGUI fastestTimeText;
     [SerializeField] public TextMeshProUGUI leastMovesText;
     [SerializeField] public List<GameObject> foodPrefabs;
+    [SerializeField] private AudioSource gameAudio;
+    [SerializeField] public AudioClip restartButtonSound;
+    [SerializeField] public AudioClip menuButtonSound;
     [SerializeField] public GameObject boxPrefab;
     [SerializeField] private Crate firstPickedCrate;
     [SerializeField] private GameObject firstFood;
@@ -139,12 +142,15 @@ public class GameManager : MonoBehaviour
     public void Start()
     {
         mainGameManager = MainGameManager.Instance;
+        gameAudio = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<AudioSource>();
+        gameAudio.Play();
         isGameActive = true;
         matchesMade = 0;
         numberOfAttemptedMatches = 0;
         time = 0;
         cookiePairs = pizzaPairs = sandwichPairs = steakPairs = 0;
         maxPairsPerType = 2;
+        UpdateTime(time);
         numberOfRows = 4;
         numberOfColumns = 4;
         numberOfFoodPairs = (numberOfRows * numberOfColumns) / 2;
@@ -448,6 +454,7 @@ public class GameManager : MonoBehaviour
         }
         mainGameManager.SaveStats();
         isGameActive = false;
+        // gameAudio.Stop();
         gameOverScreen.gameObject.SetActive(true);
     }
 
@@ -463,6 +470,7 @@ public class GameManager : MonoBehaviour
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
+    // ABSTRACTION: returns to the main menu when the Menu button is clicked
     public void ReturnToMenu()
     {
         SceneManager.LoadScene(0);
