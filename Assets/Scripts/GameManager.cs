@@ -143,12 +143,9 @@ public class GameManager : MonoBehaviour
     
     public void Start()
     {
-<<<<<<< Updated upstream
-=======
         mainGameManager = MainGameManager.Instance;
         gameAudio = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<AudioSource>();
         gameAudio.Play();
->>>>>>> Stashed changes
         isGameActive = true;
         matchesMade = 0;
         numberOfAttemptedMatches = 0;
@@ -495,11 +492,8 @@ public class GameManager : MonoBehaviour
         }
         mainGameManager.SaveStats();
         isGameActive = false;
-<<<<<<< Updated upstream
-=======
         // gameAudio.Stop();
         gameOverScreen.gameObject.SetActive(true);
->>>>>>> Stashed changes
     }
 
     // ABSTRACTION: basic elapsed time timer
@@ -516,13 +510,10 @@ public class GameManager : MonoBehaviour
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
-<<<<<<< Updated upstream
-=======
     // ABSTRACTION: returns to the main menu when the Menu button is clicked
     public void ReturnToMenu()
     {
         gameAudio.PlayOneShot(menuButtonSound, 4);
         SceneManager.LoadScene(0);
     }
->>>>>>> Stashed changes
 }
